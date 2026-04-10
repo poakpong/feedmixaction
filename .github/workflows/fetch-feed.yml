@@ -1,0 +1,29 @@
+name: Fetch Feed
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # ทุก 1 ชั่วโมง
+  workflow_dispatch:        # รันมือได้จาก GitHub UI
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch feed from redbox.poakpong.com
+        run: |
+          curl -s -L \
+            -H "User-Agent: Mozilla/5.0 (compatible; FeedFetcher/1.0)" \
+            -H "Accept: application/rss+xml, application/xml, text/xml, */*" \
+            "https://redbox.poakpong.com/feedmix" \
+            -o feedmix.xml
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add feedmix.xml
+          git diff --cached --quiet || git commit -m "update feed $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
